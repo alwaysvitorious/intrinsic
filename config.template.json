@@ -1,0 +1,5 @@
+{
+	"openai_api_key": "", // sk-proj...
+	"filewriter_abs_path": "", // eg: ~/desktop
+	"filewriter_raw_abs_path": "" // eg: ~/desktop/raws
+}
