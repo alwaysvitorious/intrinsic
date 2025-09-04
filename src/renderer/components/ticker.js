@@ -21,10 +21,12 @@ import {
 	constraints,
 	validateEditedField,
 } from '../pipeline/postprocessor/postprocessor.js';
+import { getFinancesLabels, labels } from '../utils/labels.js';
 
 export class Ticker extends LitElement {
 	static properties = {
 		ticker: { type: String },
+		lang: { type: String },
 		period: { type: String },
 		data: { type: Object },
 		periods: { type: Array },
@@ -278,6 +280,10 @@ export class Ticker extends LitElement {
 		return addChanges(out);
 	}
 
+	get financesLabels() {
+		return getFinancesLabels(this.lang || 'EN');
+	}
+
 	async handleDelete() {
 		try {
 			if (this.periods.length === 1) {
@@ -347,121 +353,9 @@ export class Ticker extends LitElement {
 		}
 	}
 
-	static rows = [
-		{ label: 'P / E', field: 'per', format: 'float', source: 'derivedRatios' },
-		{
-			label: 'P / BV',
-			field: 'p_bv',
-			format: 'float',
-			source: 'derivedRatios',
-		},
-		{ label: 'EV', field: 'ev', format: 'int', source: 'derivedRatios' },
-		{
-			label: html`EV<sub>cap</sub>`,
-			field: 'ev_cap',
-			format: 'float',
-			source: 'derivedRatios',
-		},
-		{
-			label: html`EV / CF<sub>op</sub>`,
-			field: 'ev_cfo',
-			format: 'float',
-			source: 'derivedRatios',
-		},
-		{
-			label: 'EV / π',
-			field: 'ev_net_income',
-			format: 'float',
-			source: 'derivedRatios',
-		},
-
-		{ label: 'CA', field: 'current_assets', format: 'int', source: 'data' },
-		{
-			label: 'NCA',
-			field: 'non_current_assets',
-			format: 'int',
-			source: 'data',
-		},
-		{ label: 'TA', field: 'total_assets', format: 'int', source: 'data' },
-		{
-			label: 'Cash',
-			field: 'cash_and_equivalents',
-			format: 'int',
-			source: 'data',
-		},
-		{
-			label: 'CL',
-			field: 'current_liabilities',
-			format: 'int',
-			source: 'data',
-		},
-		{
-			label: 'NCL',
-			field: 'non_current_liabilities',
-			format: 'int',
-			source: 'data',
-		},
-		{ label: 'TL', field: 'total_liabilities', format: 'int', source: 'data' },
-		{ label: 'E', field: 'equity', format: 'int', source: 'data' },
-		{ label: 'WC', field: 'working_capital', format: 'int', source: 'data' },
-		{ label: 'WC / NCL', field: 'wc_ncl', format: 'float', source: 'data' },
-		{
-			label: html`Shares<sub>≈</sub>`,
-			field: 'shares',
-			format: 'int',
-			source: 'data',
-		},
-		{ label: 'BV', field: 'book_value', format: 'float', source: 'data' },
-
-		{ label: 'R', field: 'revenue', format: 'int', source: 'data' },
-		{ label: 'π', field: 'net_income', format: 'int', source: 'data' },
-		{ label: 'EPS', field: 'eps', format: 'float', source: 'data' },
-		{
-			label: html`M<sub>net</sub>`,
-			field: 'net_margin',
-			format: 'percent',
-			source: 'data',
-		},
-		{
-			label: 'ROA',
-			field: 'roa',
-			format: 'percent',
-			source: 'data',
-		},
-		{ label: 'ROE', field: 'roe', format: 'percent', source: 'data' },
-
-		{ label: 'Liquidity', field: 'liquidity', format: 'float', source: 'data' },
-		{ label: 'Solvency', field: 'solvency', format: 'float', source: 'data' },
-		{ label: 'Leverage', field: 'leverage', format: 'float', source: 'data' },
-
-		{
-			label: html`CF<sub>op</sub>`,
-			field: 'cash_flow_from_operations',
-			format: 'int',
-			source: 'data',
-		},
-		{
-			label: html`CF<sub>inv</sub>`,
-			field: 'cash_flow_from_investing',
-			format: 'int',
-			source: 'data',
-		},
-		{
-			label: html`CF<sub>fin</sub>`,
-			field: 'cash_flow_from_financing',
-			format: 'int',
-			source: 'data',
-		},
-
-		{
-			label: 'Score',
-			field: 'score',
-			format: 'float',
-			source: 'derivedRatios',
-		},
-	];
-
 	displayValue(field, format, data = this.data, grayChange = false) {
+		const locale = this.lang === 'ES' ? 'es-ES' : 'en-US';
+
 		if (
 			!data ||
 			data[field] == null ||
@@ -477,9 +371,10 @@ export class Ticker extends LitElement {
 		let changeHTML = '';
 
 		if (change) {
-			const changeFormatted = new Intl.NumberFormat('en-US', {
+			const changeFormatted = new Intl.NumberFormat(locale, {
 				minimumFractionDigits: 1,
 				maximumFractionDigits: 1,
+				useGrouping: true,
 			}).format(change);
 
 			let colorClass = 'gray-text';
@@ -496,17 +391,19 @@ export class Ticker extends LitElement {
 
 		const formatMillions = (num, fractionDigits = 2) => {
 			return (
-				new Intl.NumberFormat('en-US', {
+				new Intl.NumberFormat(locale, {
 					minimumFractionDigits: fractionDigits,
 					maximumFractionDigits: fractionDigits,
+					useGrouping: true,
 				}).format(num / 1_000_000) + 'M'
 			);
 		};
 
 		if (field === 'score') {
-			const formatted = new Intl.NumberFormat('en-US', {
+			const formatted = new Intl.NumberFormat(locale, {
 				minimumFractionDigits: 2,
 				maximumFractionDigits: 2,
+				useGrouping: true,
 			}).format(val);
 			return html`<p>
 				${changeHTML}${formatted} <sub class="label gray-text">score</sub>
@@ -514,23 +411,26 @@ export class Ticker extends LitElement {
 		}
 
 		if (format === 'float') {
-			const formatted = new Intl.NumberFormat('en-US', {
+			const formatted = new Intl.NumberFormat(locale, {
 				minimumFractionDigits: 2,
 				maximumFractionDigits: 2,
+				useGrouping: true,
 			}).format(val);
 			return html`<p>${changeHTML}${formatted}</p>`;
 		} else if (format === 'percent') {
-			const formatted = new Intl.NumberFormat('en-US', {
+			const formatted = new Intl.NumberFormat(locale, {
 				minimumFractionDigits: 2,
 				maximumFractionDigits: 2,
+				useGrouping: true,
 			}).format(val);
 			return html`<p>${changeHTML}${formatted}%</p>`;
 		} else {
 			const formatted =
 				Math.abs(val) > 999_999_999
 					? formatMillions(val, 0)
-					: new Intl.NumberFormat('en-US', {
+					: new Intl.NumberFormat(locale, {
 							maximumFractionDigits: 0,
+							useGrouping: true,
 					  }).format(val);
 			return html`<p>${changeHTML}${formatted}</p>`;
 		}
@@ -559,7 +459,7 @@ export class Ticker extends LitElement {
 
 	renderEditableFields() {
 		return html`
-			${this.constructor.rows
+			${this.financesLabels
 				.filter((row) => row.field in this.editData)
 				.map((row) => {
 					const key = row.field;
@@ -658,6 +558,8 @@ export class Ticker extends LitElement {
 	}
 
 	render() {
+		const t = labels[this.lang || 'EN'];
+
 		if (this.loading) {
 			return html` <div>${IconSpinner}</div>`;
 		}
@@ -686,8 +588,8 @@ export class Ticker extends LitElement {
 			<div class="boxes-layout">
 				<!-- Left side -->
 				<div class="left">
-					${this.renderBox(Ticker.rows.slice(0, 6))}
-					${this.renderBox(Ticker.rows.slice(6, 18))}
+					${this.renderBox(this.financesLabels.slice(0, 6))}
+					${this.renderBox(this.financesLabels.slice(6, 18))}
 				</div>
 
 				<!-- Right side -->
@@ -697,7 +599,7 @@ export class Ticker extends LitElement {
 							<input
 								id="price"
 								type="text"
-								placeholder="price"
+								.placeholder=${t.price}
 								.value=${this.price ?? ''}
 								@input=${(e) => {
 									let v = e.target.value;
@@ -761,17 +663,18 @@ export class Ticker extends LitElement {
 									this.price,
 									this.wishedPer,
 									this.data[this.period].shares,
-									this.data[this.period].net_income
+									this.data[this.period].net_income,
+									this.lang
 								)}
 							</p>
 						</div>
 					</div>
 
-					${this.renderBox(Ticker.rows.slice(18, 24))}
+					${this.renderBox(this.financesLabels.slice(18, 24))}
 
 					<div class="row-boxes">
-						${this.renderBox(Ticker.rows.slice(24, 27))}
-						${this.renderBox(Ticker.rows.slice(27, 30))}
+						${this.renderBox(this.financesLabels.slice(24, 27))}
+						${this.renderBox(this.financesLabels.slice(27, 30))}
 					</div>
 				</div>
 			</div>

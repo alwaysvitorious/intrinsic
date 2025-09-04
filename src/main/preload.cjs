@@ -18,4 +18,6 @@ contextBridge.exposeInMainWorld('api', {
 	readFileBuffer: (filePath) => ipcRenderer.invoke('readFileBuffer', filePath),
 	runAI: (cleanedChunks, hits, minHits, period) =>
 		ipcRenderer.invoke('ai:run', cleanedChunks, hits, minHits, period),
+	get: () => ipcRenderer.invoke('settings:get'),
+	update: (updates) => ipcRenderer.invoke('settings:update', updates),
 });

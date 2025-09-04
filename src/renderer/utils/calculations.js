@@ -300,9 +300,11 @@ export function priceForWhishedPer(wishedPER, eps) {
 		<sub class="label gray-text">p needed</sub>`;
 }
 
-export function incomeForWishedPER(price, wishedPER, shares, netIncome) {
+export function incomeForWishedPER(price, wishedPER, shares, netIncome, lang) {
 	if (!price || !wishedPER || !shares || !netIncome)
 		return html`<p class="na">NA</p>`;
+
+	const locale = lang === 'ES' ? 'es-ES' : 'en-US';
 
 	const priceNumber = Number(price);
 	const wishedPERNumber = Number(wishedPER);
@@ -332,12 +334,12 @@ export function incomeForWishedPER(price, wishedPER, shares, netIncome) {
 	let formattedValue;
 	if (requiredNetIncome >= 1000000) {
 		const millionValue = Math.round(requiredNetIncome / 1000000);
-		formattedValue = `${millionValue.toLocaleString('en-US', {
+		formattedValue = `${millionValue.toLocaleString(locale, {
 			maximumFractionDigits: 0,
 			useGrouping: true,
 		})}M`;
 	} else {
-		formattedValue = `${requiredNetIncome.toLocaleString('en-US', {
+		formattedValue = `${requiredNetIncome.toLocaleString(locale, {
 			maximumFractionDigits: 0,
 			useGrouping: true,
 		})}`;

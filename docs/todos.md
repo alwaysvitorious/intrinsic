@@ -4,8 +4,8 @@
 - Submit multiple tickers while others are sent and await inbackground. Display
   spinner instead of ticker on grid while loading.
 - Use worker when parsing HTML to avoid freezing UI.
-- Filters dialog: (sort a-z/last asc/desc), search, english/spanish, modify
-  prompts, change model, write over config.json.
+- Settings dialog: (sort a-z/last asc/desc), search, modify prompts, change
+  model, modify config.json.
 - Delete full ticker. Delete full DB (start from scratch).
 - Add dev_mode to config.json. If !dev_mode -> disable devtools.
 - Add support for insurance companies and banks.

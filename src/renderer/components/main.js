@@ -1,9 +1,10 @@
 import { LitElement, html, css } from 'lit';
 import './navigation.js';
-import './submission.js';
+import './main-upper-menu.js';
 import './ticker.js';
 import { globalStyles } from './styles.js';
 import { IconSpinner, iconStyles } from './icons.js';
+import { labels } from '../utils/labels.js';
 
 export class Tickers extends LitElement {
 	static properties = {
@@ -13,6 +14,7 @@ export class Tickers extends LitElement {
 		pageSize: { type: Number },
 		loading: { type: Boolean },
 		openedTicker: { type: String },
+		lang: { type: String },
 	};
 
 	static styles = [
@@ -97,11 +99,26 @@ export class Tickers extends LitElement {
 		this.pageSize = 20;
 		this.loading = true;
 		this.openedTicker = null;
+		this.lang = 'EN';
 	}
 
 	connectedCallback() {
 		super.connectedCallback();
+		window.api.get().then((saved) => {
+			if (saved.lang) this.lang = saved.lang;
+		});
+
+		this._langHandler = (e) => {
+			this.lang = e.detail;
+		};
+
+		window.addEventListener('lang-changed', this._langHandler);
 		this.loadComponentData();
+	}
+
+	disconnectedCallback() {
+		super.disconnectedCallback();
+		window.removeEventListener('lang-changed', this._langHandler);
 	}
 
 	async loadComponentData() {
@@ -132,15 +149,16 @@ export class Tickers extends LitElement {
 		this.loading = false;
 	}
 
-	_navigateToTicker(ticker) {}
-
 	render() {
+		const t = labels[this.lang || 'EN'];
+
 		if (this.loading) {
 			return html` <div id="tickers-container">${IconSpinner}</div>`;
 		} else if (this.openedTicker) {
 			// ticker view
 			return html`<ticker-component
 				.ticker=${this.openedTicker}
+				.lang=${this.lang}
 				@close=${(e) => {
 					this.openedTicker = null;
 					if (e.detail?.deleted) {
@@ -151,20 +169,20 @@ export class Tickers extends LitElement {
 		} else {
 			// main page
 			return html`
-				<submission-component
+				<main-upper-menu-component
 					@submission-success=${() => this.loadComponentData()}
-				></submission-component>
+				></main-upper-menu-component>
 
 				<div id="tickers-container">
 					${this.tickers.length === 0
-						? html`<p id="empty">You haven't used Intrinsic yet</p>`
+						? html`<p id="empty">${t.emptyMessage}</p>`
 						: html`
 								<ul id="list">
 									${this.tickers.map(
-										(t) =>
+										(tick) =>
 											html`<li>
-												<button @click=${() => (this.openedTicker = t)}>
-													${t}
+												<button @click=${() => (this.openedTicker = tick)}>
+													${tick}
 												</button>
 											</li>`
 									)}

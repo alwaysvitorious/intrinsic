@@ -6,13 +6,16 @@ import {
 	IconFile,
 	IconSpinner,
 	iconStyles,
+	IconSettings,
 } from './icons.js';
 import { globalStyles } from './styles.js';
 import './dialog.js';
+import { labels } from '../utils/labels.js';
 
-export class Submission extends LitElement {
+export class MainUpperMenu extends LitElement {
 	static properties = {
-		open: { type: Boolean, reflect: true },
+		submissionOpen: { type: Boolean, reflect: true },
+		settingsOpen: { type: Boolean, reflect: true },
 		ticker: { type: String },
 		period: { type: String },
 		start: { type: String },
@@ -22,11 +25,13 @@ export class Submission extends LitElement {
 		busy: { type: Boolean },
 		fileSpinner: { type: Boolean },
 		invalid: { type: Boolean },
+		lang: { type: String },
 	};
 
 	constructor() {
 		super();
-		this.open = false;
+		this.submissionOpen = false;
+		this.settingsOpen = false;
 		this.ticker = '';
 		this.period = '';
 		this.start = '';
@@ -37,6 +42,17 @@ export class Submission extends LitElement {
 		this.fileSpinner = false;
 		this.invalid = false;
 		this.uiBlocked = false;
+	}
+
+	connectedCallback() {
+		super.connectedCallback();
+		window.api.get().then((saved) => {
+			if (saved.lang) {
+				this.lang = saved.lang;
+			} else {
+				this.lang = 'EN'; // default
+			}
+		});
 	}
 
 	static styles = [
@@ -79,7 +95,7 @@ export class Submission extends LitElement {
 
 			input#start-page,
 			input#end-page {
-				width: 35px;
+				width: 38px;
 			}
 
 			button:disabled svg {
@@ -96,6 +112,18 @@ export class Submission extends LitElement {
 				z-index: 9999;
 				cursor: default;
 				-webkit-app-region: drag;
+			}
+
+			.settings-wrapper {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 110px;
+				min-width: 400px;
+			}
+			.settings-btn {
+				font-weight: 400;
+				letter-spacing: 1px;
 			}
 		`,
 	];
@@ -208,20 +236,32 @@ export class Submission extends LitElement {
 	}
 	// ------------------
 
-	handleDialog() {
-		this.open = !this.open;
+	handleDialog(dialog) {
+		if (dialog === 'submission') {
+			this.submissionOpen = !this.submissionOpen;
 
-		if (!this.open) {
-			this.ticker = '';
-			this.period = '';
-			this.start = '';
-			this.end = '';
-			this.source = '';
-			this.sourcePath = '';
-			this.busy = false;
-			this.fileSpinner = false;
-			this.invalid = false;
+			if (!this.submissionOpen) {
+				this.ticker = '';
+				this.period = '';
+				this.start = '';
+				this.end = '';
+				this.source = '';
+				this.sourcePath = '';
+				this.busy = false;
+				this.fileSpinner = false;
+				this.invalid = false;
+			}
+		} else {
+			this.settingsOpen = !this.settingsOpen;
 		}
+	}
+
+	toggleLang() {
+		this.lang = this.lang === 'EN' ? 'ES' : 'EN';
+		window.api.update({ lang: this.lang });
+		window.dispatchEvent(
+			new CustomEvent('lang-changed', { detail: this.lang })
+		);
 	}
 
 	async pickFile(e) {
@@ -284,23 +324,53 @@ export class Submission extends LitElement {
 					composed: true, // cross shadow DOM boundary
 				})
 			);
-			this.handleDialog();
+			this.handleDialog('submission');
 		}
 	}
 
 	render() {
+		const t = labels[this.lang || 'EN'];
+
 		return html`
 			<div class="ui-container">
 				<button aria-label="Shutdown" @click=${() => window.api.shutdown()}>
 					<svg width="20" height="20">${IconX}</svg>
 				</button>
 
-				<button aria-label="Add" @click=${this.handleDialog}>
+				<button
+					aria-label="Settings"
+					@click=${() => this.handleDialog('settings')}
+				>
+					<svg width="20" height="20">${IconSettings}</svg>
+				</button>
+
+				<button
+					aria-label="Add"
+					@click=${() => this.handleDialog('submission')}
+				>
 					<svg width="20" height="20" class="rot-45">${IconX}</svg>
 				</button>
 			</div>
 
-			<dialog-component ?open=${this.open} @dialog-closed=${this.handleDialog}>
+			<dialog-component
+				?open=${this.settingsOpen}
+				@dialog-closed=${() => this.handleDialog('settings')}
+			>
+				<div class="settings-wrapper">
+					<button
+						aria-label="Language"
+						class="settings-btn"
+						@click="${this.toggleLang}"
+					>
+						${this.lang}
+					</button>
+				</div>
+			</dialog-component>
+
+			<dialog-component
+				?open=${this.submissionOpen}
+				@dialog-closed=${() => this.handleDialog('submission')}
+			>
 				<form @submit=${this.submit}>
 					<input
 						id="ticker"
@@ -311,27 +381,27 @@ export class Submission extends LitElement {
 					<input
 						id="period"
 						type="text"
-						placeholder="Period"
+						.placeholder=${t.period}
 						.value=${this.period}
 					/>
 					<div class="vertical">
 						<input
 							id="start-page"
 							type="text"
-							placeholder="Start"
+							.placeholder=${t.start}
 							.value=${this.start}
 						/>
 						<input
 							id="end-page"
 							type="text"
-							placeholder="End"
+							.placeholder=${t.end}
 							.value=${this.end}
 						/>
 					</div>
 					<input
 						id="source"
 						type="text"
-						placeholder="Source"
+						.placeholder=${t.source}
 						.value=${this.source}
 						@input=${(e) => (this.source = this.sanitizeSource(e.target.value))}
 						@focus=${(e) => {
@@ -364,4 +434,4 @@ export class Submission extends LitElement {
 	}
 }
 
-customElements.define('submission-component', Submission);
+customElements.define('main-upper-menu-component', MainUpperMenu);

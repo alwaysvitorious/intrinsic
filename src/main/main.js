@@ -63,6 +63,24 @@ try {
 
 setupOpenai(config.openai_api_key);
 
+const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+let settings = {};
+
+// Load settings (or fallback)
+function loadSettings() {
+	try {
+		const raw = fs.readFileSync(settingsPath, 'utf8');
+		settings = JSON.parse(raw);
+	} catch {
+		settings = {}; // start fresh if missing/corrupt
+	}
+	return settings;
+}
+
+async function saveSettings() {
+	await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
+}
+
 export async function fileWriter(filename, content, isRaw) {
 	if (!config.filewriter_abs_path || config.filewriter_abs_path.trim() === '') {
 		return false;
@@ -137,6 +155,8 @@ app.on('second-instance', () => {
 
 // ───────── Lifecycle ─────────
 app.whenReady().then(() => {
+	loadSettings();
+
 	try {
 		const dbDir = path.join(app.getPath('userData'), 'sqlite');
 		const dbName = 'intrinsic.sqlite';
@@ -150,6 +170,16 @@ app.whenReady().then(() => {
 		app.quit();
 		return;
 	}
+
+	ipcMain.handle('settings:get', async () => {
+		return settings;
+	});
+
+	ipcMain.handle('settings:update', async (_event, updates) => {
+		settings = { ...settings, ...updates };
+		await saveSettings();
+		return settings;
+	});
 
 	ipcMain.handle('db:getTickersCount', () => {
 		try {
