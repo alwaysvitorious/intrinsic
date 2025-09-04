@@ -9,10 +9,11 @@ import {
 	IconSettings,
 } from './icons.js';
 import { globalStyles } from './styles.js';
-import './dialog.js';
 import { labels } from '../utils/labels.js';
+import './dialog.js';
+import './settings.js';
 
-export class MainUpperMenu extends LitElement {
+export class Submission extends LitElement {
 	static properties = {
 		submissionOpen: { type: Boolean, reflect: true },
 		settingsOpen: { type: Boolean, reflect: true },
@@ -112,18 +113,6 @@ export class MainUpperMenu extends LitElement {
 				z-index: 9999;
 				cursor: default;
 				-webkit-app-region: drag;
-			}
-
-			.settings-wrapper {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				min-height: 110px;
-				min-width: 400px;
-			}
-			.settings-btn {
-				font-weight: 400;
-				letter-spacing: 1px;
 			}
 		`,
 	];
@@ -256,14 +245,6 @@ export class MainUpperMenu extends LitElement {
 		}
 	}
 
-	toggleLang() {
-		this.lang = this.lang === 'EN' ? 'ES' : 'EN';
-		window.api.update({ lang: this.lang });
-		window.dispatchEvent(
-			new CustomEvent('lang-changed', { detail: this.lang })
-		);
-	}
-
 	async pickFile(e) {
 		e.preventDefault();
 		e.stopPropagation();
@@ -352,20 +333,12 @@ export class MainUpperMenu extends LitElement {
 				</button>
 			</div>
 
-			<dialog-component
-				?open=${this.settingsOpen}
-				@dialog-closed=${() => this.handleDialog('settings')}
-			>
-				<div class="settings-wrapper">
-					<button
-						aria-label="Language"
-						class="settings-btn"
-						@click="${this.toggleLang}"
-					>
-						${this.lang}
-					</button>
-				</div>
-			</dialog-component>
+			<settings-dialog
+				.open=${this.settingsOpen}
+				.lang=${this.lang}
+				@close=${() => this.handleDialog('settings')}
+				@lang-updated=${(e) => (this.lang = e.detail)}
+			></settings-dialog>
 
 			<dialog-component
 				?open=${this.submissionOpen}
@@ -434,4 +407,4 @@ export class MainUpperMenu extends LitElement {
 	}
 }
 
-customElements.define('main-upper-menu-component', MainUpperMenu);
+customElements.define('submission-component', Submission);

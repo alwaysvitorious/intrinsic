@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import './navigation.js';
-import './main-upper-menu.js';
+import './submission.js';
+import './settings.js';
 import './ticker.js';
 import { globalStyles } from './styles.js';
 import { IconSpinner, iconStyles } from './icons.js';
@@ -169,9 +170,9 @@ export class Tickers extends LitElement {
 		} else {
 			// main page
 			return html`
-				<main-upper-menu-component
+				<submission-component
 					@submission-success=${() => this.loadComponentData()}
-				></main-upper-menu-component>
+				></submission-component>
 
 				<div id="tickers-container">
 					${this.tickers.length === 0
