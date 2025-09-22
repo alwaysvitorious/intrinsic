@@ -1,0 +1,34 @@
+{
+	"name": "intrinsic",
+	"productName": "intrinsic",
+	"version": "1.0.0",
+	"main": "src/main/main.js",
+	"bin": {
+		"intrinsic": "cli.js"
+	},
+	"scripts": {
+		"postinstall": "electron-rebuild -f -w better-sqlite3",
+		"start": "npm run build && cross-env NODE_ENV=production electron .",
+		"start:prod": "cross-env NODE_ENV=production electron .",
+		"build": "vite build",
+		"dev:vite": "cross-env NODE_ENV=development vite",
+		"dev:electron": "cross-env NODE_ENV=development electron .",
+		"dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\""
+	},
+	"type": "module",
+	"author": "github.com/alwaysvitorious",
+	"license": "MIT",
+	"dependencies": {
+		"better-sqlite3": "^12.2.0",
+		"lit": "^3.3.1",
+		"openai": "^5.15.0",
+		"pdfjs-dist": "^5.4.54"
+	},
+	"devDependencies": {
+		"@electron/rebuild": "^4.0.1",
+		"concurrently": "^9.2.0",
+		"cross-env": "^10.0.0",
+		"electron": "^37.3.0",
+		"vite": "^7.1.3"
+	}
+}
