@@ -1,26 +1,21 @@
 ## To-dos
 
-- Use electron-builder and add app icon.
-- Improve clients initialization error handling.
-- Improve AI error handling + console.error on pipeline
-- Avoid freezing UI when parsing HTML. Worker + linkedom?
-- On quarters/semesters calculate P/E and score on TTM if available.
-- Settings dialog: (sort a-z/last asc/desc), search, modify prompts, currently
-  on portfolio, switch llm, modify config.json, delete DB (start from scratch).
-- Submit multiple tickers while others are sent and await in background. Display
-  spinner instead of ticker on grid while loading. Handle data races, same
-  ticker submissions, existing ticker submissions, errors...
 - Support insurance companies and banks.
 - Add tests.
-- Optimize cleaner string iterations.
+- Allow different score formulas.
 - Keyboard navigation.
-- Add RAG chat within PDFs / parsed text.
+- Add charts and sankey visualization.
+- Add RAG chat within PDFs / parsed text / JSON data.
 - Allow CSR URLs.
-- Web-search for portfolio tickers news.
+- Select tickers on portfolio -> filter/search through dialog.
+- Web-search for latest portfolio tickers news.
 - Monte Carlo simulation with >=10 periods.
-- Add ETFs, Index Funds. If ticker starts with 'FUND.'{ISIN} -> fetch KID ->
+- Add ETFs, Index Funds. If ticker starts with 'FUND.{ISIN}' -> fetch KID ->
   return basic info.
-- Add more LLM endpoints (Claude, Cloudflare, AWS Bedrock, Google AI, Groq,
-  Deepseek...)
+- Add LLM options (Claude, Cloudflare, AWS Bedrock, Google AI, Groq, Deepseek,
+  Qwen... models within)
 - Local LLMs options: embed fine-tuned small LLM, llama-cpp, Ollama...
+- Switch LLM from dialog.
+- Local ML classifier for words arrays.
+- Fine-tune BERT NER model -> local inference.
 - Integrate Alpha Vantage API or ticker price scraper for live-pricing.
