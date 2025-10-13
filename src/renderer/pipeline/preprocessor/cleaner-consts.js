@@ -1,7 +1,6 @@
 export const goodWords = ['bill', 'mil', 'thou', 'ended'];
 
-// EN
-export const commonFilterWordsEN = [
+export const commonFilterWords = [
 	'deferred',
 	'goodwill',
 	'payable',
@@ -132,7 +131,7 @@ export const commonFilterWordsEN = [
 	'address',
 ];
 
-export const balanceSpecificEN = [
+export const balanceSpecific = [
 	'invest',
 	'financ',
 	'income',
@@ -151,7 +150,7 @@ export const balanceSpecificEN = [
 	'common',
 ];
 
-export const incomeSpecificEN = [
+export const incomeSpecific = [
 	'invest',
 	'financ',
 	'liabilit',
@@ -163,7 +162,7 @@ export const incomeSpecificEN = [
 	'fuel',
 ];
 
-export const cashFlowSpecificEN = [
+export const cashFlowSpecific = [
 	'liabilit',
 	'asset',
 	'equity',
@@ -198,176 +197,7 @@ export const cashFlowSpecificEN = [
 	'subscribed',
 ];
 
-// ES
-export const commonFilterWordsES = [
-	'diferido',
-	'comercio',
-	'pagable',
-	'impuesto',
-	'acreedor',
-	'deudor',
-	'intangible',
-	'deficit',
-	'adicional',
-	'equipo',
-	'suscrip',
-	'servicio',
-	'inter',
-	'marketing',
-	'investiga',
-	'desarrollo',
-	'general',
-	'administr',
-	'provisi',
-	'ajuste',
-	'deprecia',
-	'compensa',
-	'amortiz',
-	'divisa',
-	'libera',
-	'gasto',
-	'coste',
-	'adquis',
-	'reembolso',
-	'cambio',
-	'mantenido',
-	'retenido',
-	'otra',
-	'inmobiliar',
-	'contrato',
-	'seguro',
-	'transfer',
-	'reclasif',
-	'impositiv',
-	'valoraci',
-	'conversi',
-	'participa',
-	'margen',
-	'instrumento',
-	'tenedor',
-	'derecho',
-	'inmoviliza',
-	'existencia',
-	'inventario',
-	'arrenda',
-	'dividendo',
-	'circula',
-	'inicio',
-	'traspaso',
-	'distribuci',
-	'combinaci',
-	'alta',
-	'pago',
-	'saldo',
-	'%',
-	'reparto',
-	'nuestro',
-	'medioambiente',
-	'gobierno',
-	'cobertura',
-	'periodificaci',
-	'escritura',
-	'prima',
-	'reserva',
-	'subvenci',
-	'donaci',
-	'subsidio',
-	'legado',
-	'enajena',
-	'desinversi',
-	'descubierto',
-	'negociable',
-	'emisi',
-	'asociad',
-	'www.',
-	'http',
-	'(+34',
-	'madrid',
-	'vocal',
-	'secretar',
-	'consejer',
-	'president',
-	'persona',
-	'proveedor',
-	'exigid',
-	'aumento',
-	'reducci',
-	'combustible',
-	'suscrito',
-	'perpetua',
-	'S.A.',
-	'derrama',
-	'asegurad',
-	'asimetr',
-	'subordinad',
-	'riesgo',
-	'reclasifica',
-	'designa',
-	'hiper',
-	'table:',
-	'end of table',
-];
-
-export const balanceSpecificES = [
-	'invers',
-	'financ',
-	'ingreso',
-	'beneficio',
-	'flujo',
-	'flow',
-	'resultado',
-	'atribui',
-	'multigrupo',
-	'fiscal',
-	'cartera',
-	'cobra',
-	'paga',
-	'ebit',
-	'socio',
-	'variaci',
-	'deriva',
-];
-
-export const incomeSpecificES = [
-	'invers',
-	'financ',
-	'pasivo',
-	'activo',
-	'balance',
-	'flujo',
-	'flow',
-	'equivalen',
-	'prestaciones',
-];
-
-export const cashFlowSpecificES = [
-	'pasivo',
-	'activo',
-	'patrimonio',
-	'equivalen',
-	'ingreso',
-	'beneficio',
-	'balance',
-	'resultado',
-	'atribui',
-	'otro',
-	'banco',
-	'variac',
-	'unidad',
-	'cobro',
-	'fiscal',
-	'riesgo',
-	'acci',
-	'prop',
-	'socio',
-	'propietar',
-	'cartera',
-	'cobra',
-	'paga',
-	'partida',
-];
-
-export function concatenateArrays(...arrays) {
+function concatenateArrays(...arrays) {
 	const result = [];
 	for (const arr of arrays) {
 		result.push(...arr);
@@ -375,47 +205,12 @@ export function concatenateArrays(...arrays) {
 	return result;
 }
 
-export const filterWordsBalanceEN = concatenateArrays(
-	commonFilterWordsEN,
-	balanceSpecificEN
-);
-export const filterWordsIncomeEN = concatenateArrays(
-	commonFilterWordsEN,
-	incomeSpecificEN
-);
-export const filterWordsCashFlowEN = concatenateArrays(
-	commonFilterWordsEN,
-	cashFlowSpecificEN
-);
-export const filterWordsBalanceES = concatenateArrays(
-	commonFilterWordsES,
-	balanceSpecificES
-);
-export const filterWordsIncomeES = concatenateArrays(
-	commonFilterWordsES,
-	incomeSpecificES
-);
-export const filterWordsCashFlowES = concatenateArrays(
-	commonFilterWordsES,
-	cashFlowSpecificES
-);
-
-export function getFilterWords(language, target) {
-	if (language === 'ES') {
-		if (target === 'balance') {
-			return filterWordsBalanceES;
-		} else if (target === 'income') {
-			return filterWordsIncomeES;
-		} else {
-			return filterWordsCashFlowES;
-		}
+export function getFilterWords(target) {
+	if (target === 'balance') {
+		return concatenateArrays(commonFilterWords, balanceSpecific);
+	} else if (target === 'income') {
+		return concatenateArrays(commonFilterWords, incomeSpecific);
 	} else {
-		if (target === 'balance') {
-			return filterWordsBalanceEN;
-		} else if (target === 'income') {
-			return filterWordsIncomeEN;
-		} else {
-			return filterWordsCashFlowEN;
-		}
+		return concatenateArrays(commonFilterWords, cashFlowSpecific);
 	}
 }

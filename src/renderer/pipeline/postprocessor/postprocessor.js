@@ -96,7 +96,10 @@ export function postprocessor(inferenceResults) {
         }
     }
     */
-	if (!inferenceResults) return inferenceResults;
+	if (!inferenceResults) {
+		console.error('Inference results are null or undefined');
+		return inferenceResults;
+	}
 
 	const postprocessed = {
 		current_assets: null,

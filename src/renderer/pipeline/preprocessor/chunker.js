@@ -3,12 +3,9 @@ import {
 	OVERLAP_STRIDE,
 	BUFFER_SIZE,
 	OUTPUT_CHUNK_SIZE,
-	balanceIndicatorsEN,
-	incomeIndicatorsEN,
-	cashFlowIndicatorsEN,
-	balanceIndicatorsES,
-	incomeIndicatorsES,
-	cashFlowIndicatorsES,
+	balanceIndicators,
+	incomeIndicators,
+	cashFlowIndicators,
 } from './chunker-consts.js';
 import { runWorker } from '../../workers/run.js';
 
@@ -19,71 +16,38 @@ export class Chunker {
 		this.BUFFER_SIZE = BUFFER_SIZE;
 		this.OUTPUT_CHUNK_SIZE = OUTPUT_CHUNK_SIZE;
 
-		this.balanceIndicatorsENarr = Array.from(balanceIndicatorsEN);
-		this.incomeIndicatorsENarr = Array.from(incomeIndicatorsEN);
-		this.cashFlowIndicatorsENarr = Array.from(cashFlowIndicatorsEN);
-		this.balanceIndicatorsESarr = Array.from(balanceIndicatorsES);
-		this.incomeIndicatorsESarr = Array.from(incomeIndicatorsES);
-		this.cashFlowIndicatorsESarr = Array.from(cashFlowIndicatorsES);
+		this.balanceIndicatorsArr = Array.from(balanceIndicators);
+		this.incomeIndicatorsArr = Array.from(incomeIndicators);
+		this.cashFlowIndicatorsArr = Array.from(cashFlowIndicators);
 	}
 
 	async getChunks(content, minHits) {
 		let balanceResult = {};
 		let incomeResult = {};
 		let cashFlowResult = {};
-		let language = 'EN';
 
 		try {
 			const lowerContent = this.normalizeText(content);
 
-			// try EN
 			[balanceResult, incomeResult, cashFlowResult] = await Promise.all([
 				runWorker('findChunk', [
 					content,
 					lowerContent,
-					this.balanceIndicatorsENarr,
+					this.balanceIndicatorsArr,
 				]),
 				runWorker('findChunk', [
 					content,
 					lowerContent,
-					this.incomeIndicatorsENarr,
+					this.incomeIndicatorsArr,
 				]),
 				runWorker('findChunk', [
 					content,
 					lowerContent,
-					this.cashFlowIndicatorsENarr,
+					this.cashFlowIndicatorsArr,
 				]),
 			]);
 
-			// not enough hits -> try ES
-			if (
-				balanceResult.hits < minHits ||
-				incomeResult.hits < minHits ||
-				cashFlowResult.hits < minHits
-			) {
-				language = 'ES';
-
-				[balanceResult, incomeResult, cashFlowResult] = await Promise.all([
-					runWorker('findChunk', [
-						content,
-						lowerContent,
-						this.balanceIndicatorsESarr,
-					]),
-					runWorker('findChunk', [
-						content,
-						lowerContent,
-						this.incomeIndicatorsESarr,
-					]),
-					runWorker('findChunk', [
-						content,
-						lowerContent,
-						this.cashFlowIndicatorsESarr,
-					]),
-				]);
-			}
-
 			return {
-				language,
 				balance: balanceResult,
 				income: incomeResult,
 				cashFlow: cashFlowResult,

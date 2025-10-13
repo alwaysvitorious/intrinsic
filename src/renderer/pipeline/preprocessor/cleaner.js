@@ -3,22 +3,11 @@ import { runWorker } from '../../workers/run.js';
 
 export async function chunksCleaner(chunkerResults, period) {
 	const [balance, income, cashFlow] = await Promise.all([
-		runWorker('cleanChunk', [
-			'balance',
-			chunkerResults.balance.chunk,
-			chunkerResults.language,
-			period,
-		]),
-		runWorker('cleanChunk', [
-			'income',
-			chunkerResults.income.chunk,
-			chunkerResults.language,
-			period,
-		]),
+		runWorker('cleanChunk', ['balance', chunkerResults.balance.chunk, period]),
+		runWorker('cleanChunk', ['income', chunkerResults.income.chunk, period]),
 		runWorker('cleanChunk', [
 			'cashFlow',
 			chunkerResults.cashFlow.chunk,
-			chunkerResults.language,
 			period,
 		]),
 	]);
@@ -26,8 +15,8 @@ export async function chunksCleaner(chunkerResults, period) {
 	return { balance, income, cashFlow };
 }
 
-export function cleanChunk(target, chunk, language, period) {
-	const filterWords = getFilterWords(language, target);
+export function cleanChunk(target, chunk, period) {
+	const filterWords = getFilterWords(target);
 
 	// *
 	// **
@@ -223,20 +212,17 @@ export function cleanChunk(target, chunk, language, period) {
 			const lowerLine = combinedLines.toLowerCase();
 
 			// Check if contains January/Enero
-			const containsJanuary =
-				language === 'ES'
-					? lowerLine.includes('enero')
-					: lowerLine.includes('january');
+			const containsJanuary = lowerLine.includes('january');
 
 			if (containsJanuary) {
 				// Process January section
-				modifiedText += processJanuarySection(lines, i, language);
+				modifiedText += processJanuarySection(lines, i);
 
 				// Skip processed lines (up to 2)
 				i += Math.min(2, lines.length - i - 1);
 			} else {
 				// Process dates normally
-				modifiedText += processDates(lines[i], language) + '\n';
+				modifiedText += processDates(lines[i]) + '\n';
 			}
 		}
 		let januaryRemoved = '';
@@ -244,8 +230,7 @@ export function cleanChunk(target, chunk, language, period) {
 
 		while (currPos < modifiedText.length) {
 			const [foundJanuary, skipLen] = hasJanuary(
-				modifiedText.substring(currPos),
-				language
+				modifiedText.substring(currPos)
 			);
 
 			const span = modifiedText.substring(currPos, currPos + skipLen);
@@ -434,11 +419,6 @@ export function cleanChunk(target, chunk, language, period) {
 			}
 		}
 
-		// Handle Spanish language case
-		if (language === 'ES') {
-			processedLine = processedLine.replace(/\./g, '');
-		}
-
 		processedText += processedLine + '\n';
 	}
 
@@ -450,27 +430,14 @@ export function cleanChunk(target, chunk, language, period) {
 	let hasMillionsFirst = false;
 	let hasThousandsFirst = false;
 
-	if (language === 'EN') {
-		hasMillionsFirst =
-			/\bin\s+millions?\b|\bmillions?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
-				processedText
-			);
-		hasThousandsFirst =
-			/\bin\s+thousands?\b|\bthousands?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
-				processedText
-			);
-	}
-
-	if (language === 'ES') {
-		hasMillionsFirst =
-			/\ben\s+millones\b|\bmillones\s+de\s+(?:euros|dolares|dólares|libras)\b/gi.test(
-				processedText
-			);
-		hasThousandsFirst =
-			/\ben\s+miles\b|\bmiles\s+de\s+(?:euros|dolares|dólares|libras)\b/gi.test(
-				processedText
-			);
-	}
+	hasMillionsFirst =
+		/\bin\s+millions?\b|\bmillions?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
+			processedText
+		);
+	hasThousandsFirst =
+		/\bin\s+thousands?\b|\bthousands?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
+			processedText
+		);
 
 	// *
 	// **
@@ -529,11 +496,7 @@ export function cleanChunk(target, chunk, language, period) {
 		}
 
 		// Remove all thousands separators
-		if (language === 'ES') {
-			processedLine = processedLine.replace(/\./g, '');
-		} else {
-			processedLine = processedLine.replace(/,/g, '');
-		}
+		processedLine = processedLine.replace(/,/g, '');
 
 		// Replace unit markers like "(€m)" or "(€k)" before stripping symbols
 		processedLine = processedLine.replace(
@@ -607,54 +570,28 @@ export function cleanChunk(target, chunk, language, period) {
 	let hasMillionsFinal = false;
 	let hasThousandsFinal = false;
 
-	if (language === 'EN') {
-		hasMillionsFinal =
-			/\bin\s+millions?\b|\bmillions?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
-				processedText
-			);
-		hasThousandsFinal =
-			/\bin\s+thousands?\b|\bthousands?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
-				processedText
-			);
-
-		// remove units
-		processedText = processedText.replace(
-			/\bin\s+millions?\s+of\b|\bin\s+millions?,\b|\bin\s+millions?\b|\bmillions?\s+of\b|\bmillions?\.\b|\bmillions?,\b|\bmillions?\b/gi,
-			''
+	hasMillionsFinal =
+		/\bin\s+millions?\b|\bmillions?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
+			processedText
 		);
-		processedText = processedText.replace(
-			/\bin\s+thousands?\s+of\b|\bin\s+thousands?,\b|\bin\s+thousands?\b|\bthousands?\s+of\b|\bthousands?\.\b|\bthousands?,\b|\bthousands?\b/gi,
-			''
-		);
-		processedText = processedText.replace(
-			/\bexcept\s+share\s+and\s+per\s+share\b|\bexcept\s+per\s+share\b|\bexcept\s+share\b/gi,
-			''
-		);
-	}
-
-	if (language === 'ES') {
-		hasMillionsFinal =
-			/\ben\s+millones\b|\bmillones\s+de\s+(?:euros|dolares|dólares|libras)\b/gi.test(
-				processedText
-			);
-		hasThousandsFinal =
-			/\ben\s+miles\b|\bmiles\s+de\s+(?:euros|dolares|dólares|libras)\b/gi.test(
-				processedText
-			);
-
-		// remove units
-		processedText = processedText.replace(
-			/\ben\s+millones\s+de\b|\ben\s+millones,\b|\bmillones\s+de\b|\bmillones\.\b|\bmillones,\b|\bmillones\b/gi,
-			''
-		);
-		processedText = processedText.replace(
-			/\ben\s+miles\s+de\b|\ben\s+miles,\b|\bmiles\s+de\b|\bmiles\.\b|\bmiles,\b|\bmiles\b/gi,
-			''
+	hasThousandsFinal =
+		/\bin\s+thousands?\b|\bthousands?\s+of\s+(?:dollars|pounds|euros)\b/gi.test(
+			processedText
 		);
 
-		// Handle decimal points for Spanish
-		processedText = processedText.replace(/(\d),(\d+)/g, '$1.$2');
-	}
+	// remove units
+	processedText = processedText.replace(
+		/\bin\s+millions?\s+of\b|\bin\s+millions?,\b|\bin\s+millions?\b|\bmillions?\s+of\b|\bmillions?\.\b|\bmillions?,\b|\bmillions?\b/gi,
+		''
+	);
+	processedText = processedText.replace(
+		/\bin\s+thousands?\s+of\b|\bin\s+thousands?,\b|\bin\s+thousands?\b|\bthousands?\s+of\b|\bthousands?\.\b|\bthousands?,\b|\bthousands?\b/gi,
+		''
+	);
+	processedText = processedText.replace(
+		/\bexcept\s+share\s+and\s+per\s+share\b|\bexcept\s+per\s+share\b|\bexcept\s+share\b/gi,
+		''
+	);
 
 	let units = 0;
 
@@ -682,7 +619,7 @@ export function cleanChunk(target, chunk, language, period) {
 // ***
 // ****
 // ***** DATES HELPERS
-function processDates(line, language, isJanuary) {
+function processDates(line, isJanuary) {
 	if (!line || line.length < 6) {
 		return line;
 	}
@@ -711,30 +648,17 @@ function processDates(line, language, isJanuary) {
 			year = year < 50 ? year + 2000 : year + 1900;
 		}
 
-		// Handle language-specific formats
-		if (language === 'ES') {
-			if (firstNum < 1 || firstNum > 31 || secondNum < 1 || secondNum > 12) {
-				continue;
-			}
-			if (secondNum === 1) {
-				result =
-					result.substring(0, position) +
-					(year - 1) +
-					result.substring(position + fullMatch.length);
-			}
-		} else {
-			if (firstNum < 1 || firstNum > 31 || secondNum < 1 || secondNum > 31) {
-				continue;
-			}
-			if (
-				(firstNum === 1 && secondNum > 12) ||
-				(firstNum > 12 && secondNum === 1)
-			) {
-				result =
-					result.substring(0, position) +
-					(year - 1) +
-					result.substring(position + fullMatch.length);
-			}
+		if (firstNum < 1 || firstNum > 31 || secondNum < 1 || secondNum > 31) {
+			continue;
+		}
+		if (
+			(firstNum === 1 && secondNum > 12) ||
+			(firstNum > 12 && secondNum === 1)
+		) {
+			result =
+				result.substring(0, position) +
+				(year - 1) +
+				result.substring(position + fullMatch.length);
 		}
 	}
 
@@ -756,7 +680,7 @@ function processDates(line, language, isJanuary) {
 	return result;
 }
 
-function processJanuarySection(lines, currentIndex, language) {
+function processJanuarySection(lines, currentIndex) {
 	while (currentIndex < lines.length && !lines[currentIndex].trim()) {
 		currentIndex++;
 	}
@@ -774,44 +698,28 @@ function processJanuarySection(lines, currentIndex, language) {
 		combinedText += lines[currentIndex + offset] + '\n';
 	}
 
-	return processDates(combinedText, language, true);
+	return processDates(combinedText, true);
 }
 
-function hasJanuary(text, language) {
+function hasJanuary(text) {
 	if (!text || text.length === 0) {
 		return [false, 0];
 	}
 
-	const patterns =
-		language === 'ES'
-			? [
-					'enero 31,',
-					'enero 31',
-					'enero 31.',
-					'Enero 31,',
-					'Enero 31',
-					'Enero 31.',
-					'ENERO 31,',
-					'ENERO 31',
-					'ENERO 31.',
-					'enero',
-					'Enero',
-					'ENERO',
-			  ]
-			: [
-					'january 31,',
-					'january 31',
-					'january 31.',
-					'January 31,',
-					'January 31',
-					'January 31.',
-					'JANUARY 31,',
-					'JANUARY 31',
-					'JANUARY 31.',
-					'january',
-					'January',
-					'JANUARY',
-			  ];
+	const patterns = [
+		'january 31,',
+		'january 31',
+		'january 31.',
+		'January 31,',
+		'January 31',
+		'January 31.',
+		'JANUARY 31,',
+		'JANUARY 31',
+		'JANUARY 31.',
+		'january',
+		'January',
+		'JANUARY',
+	];
 
 	// Check for complete patterns
 	for (const pattern of patterns) {
@@ -827,7 +735,7 @@ function hasJanuary(text, language) {
 	}
 
 	// Check for split pattern (month on one line, day on another)
-	const month = language === 'ES' ? 'enero' : 'january';
+	const month = 'january';
 
 	const searchLength = Math.min(text.length, month.length + 5);
 	const startText = text.substring(0, searchLength).toLowerCase();
@@ -931,14 +839,8 @@ function checkCurrencyMillionsOrUds(text, position) {
 		}
 
 		// Now check for million/thousand words
-		const millionWords = [
-			'million',
-			'millions',
-			'millón',
-			'millon',
-			'millones',
-		];
-		const thousandWords = ['thousand', 'thousands', 'mil', 'miles'];
+		const millionWords = ['million', 'millions'];
+		const thousandWords = ['thousand', 'thousands'];
 
 		// Check for million variants
 		for (const word of millionWords) {

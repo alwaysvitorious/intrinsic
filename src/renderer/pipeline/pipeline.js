@@ -41,6 +41,7 @@ async function fetchWithRetry(url) {
 
 // RUNS ON RENDERER
 const MIN_HITS = 17;
+
 export async function pipeline(params) {
 	try {
 		let raw;
@@ -101,8 +102,10 @@ export async function pipeline(params) {
 		}
 
 		if (isPDF) {
+			console.error('PDF file size:', raw?.byteLength);
 			if (!raw || raw.byteLength < 500) return false;
 		} else {
+			console.error('HTML/text file size:', text?.length);
 			if (!text || text.length < 500) return false;
 		}
 
@@ -118,7 +121,10 @@ export async function pipeline(params) {
 			parsed = processHTMLText(text, params.start, params.end);
 		}
 
-		if (!parsed || parsed.length < 500) return false;
+		if (!parsed || parsed.length < 500) {
+			console.error('Parsed text too short or empty');
+			return false;
+		}
 
 		raw = null;
 		text = null;
@@ -138,7 +144,6 @@ export async function pipeline(params) {
 		let chunkerResults = await chunker.getChunks(parsed, MIN_HITS);
 		/*
         chunkerResults = {
-            language: 'EN' | 'ES',
             balance: {
                 chunk: string,
                 hits: number,
@@ -169,14 +174,7 @@ export async function pipeline(params) {
 				chunkerResults.income.chunk.length < 200 &&
 				chunkerResults.cashFlow.chunk.length < 200)
 		) {
-			return false;
-		}
-
-		if (
-			chunkerResults.balance.hits < MIN_HITS &&
-			chunkerResults.income.hits < MIN_HITS &&
-			chunkerResults.cashFlow.hits < MIN_HITS
-		) {
+			console.error('Chunker hits insufficient');
 			return false;
 		}
 
@@ -235,6 +233,7 @@ export async function pipeline(params) {
 				cleanedChunks.income.text.length < 200 &&
 				cleanedChunks.cashFlow.text.length < 200)
 		) {
+			console.error('Cleaner output insufficient');
 			return false;
 		}
 
@@ -281,7 +280,10 @@ export async function pipeline(params) {
             cashFlow: { inputTokens?: number, outputTokens?: number, current_assets:... }
         }
         */
-		if (!inferenceResults) return false;
+		if (!inferenceResults) {
+			console.error('Inference failed');
+			return false;
+		}
 
 		await window.api.fileWriter(
 			'inference_results',
@@ -308,7 +310,10 @@ export async function pipeline(params) {
 		// ****
 		// ***** POSTPROCESSOR
 		const postprocessed = postprocessor(inferenceResults);
-		if (!postprocessed) return false;
+		if (!postprocessed) {
+			console.error('Postprocessor failed');
+			return false;
+		}
 		/*
         postprocessed = {
             current_assets              INTEGER,
