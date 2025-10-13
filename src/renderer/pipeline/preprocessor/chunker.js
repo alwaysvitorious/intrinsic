@@ -21,7 +21,7 @@ export class Chunker {
 		this.cashFlowIndicatorsArr = Array.from(cashFlowIndicators);
 	}
 
-	async getChunks(content, minHits) {
+	async getChunks(content) {
 		let balanceResult = {};
 		let incomeResult = {};
 		let cashFlowResult = {};

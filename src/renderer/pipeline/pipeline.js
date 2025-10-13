@@ -145,7 +145,7 @@ export async function pipeline(params) {
 		// ****
 		// ***** CHUNK
 		const chunker = new Chunker();
-		let chunkerResults = await chunker.getChunks(parsed, MIN_HITS);
+		let chunkerResults = await chunker.getChunks(parsed);
 		/*
         chunkerResults = {
             balance: {
