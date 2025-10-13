@@ -28,8 +28,7 @@
      disk (`balance_chunk`, `income_chunk`, `cashflow_chunk`).
 
 The Chunker scans the document with a sliding window, looking for keywords
-associated with each financial section. It tries English indicators first, then
-retries in Spanish if not enough hits are found.
+associated with each financial section.
 
 - Normalizes text (lowercase, strips accents) for better matching.
 - Slides a window over the content with overlap to avoid missing context.
