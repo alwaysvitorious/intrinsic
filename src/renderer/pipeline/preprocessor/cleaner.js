@@ -605,6 +605,14 @@ export function cleanChunk(target, chunk, period) {
 	// accounting notation to minus sign
 	processedText = processedText.replace(/\(\s*(\d+(?:\.\d+)?)\s*\)/g, '-$1');
 
+	// collapse whitespace & blank lines
+	processedText = processedText
+		.replace(/\r\n/g, '\n') // normalize Windows line endings
+		.replace(/[ \t]+/g, ' ') // collapse runs of spaces/tabs
+		.replace(/[ \t]*\n[ \t]*/g, '\n') // trim spaces around newlines
+		.replace(/\n{2,}/g, '\n') // collapse multiple blank lines
+		.trim(); // trim start/end
+
 	return {
 		text: processedText,
 		units: units,

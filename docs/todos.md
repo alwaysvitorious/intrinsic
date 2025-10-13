@@ -3,6 +3,7 @@
 - Support insurance companies and banks.
 - Add tests.
 - Allow different score formulas.
+- Improve cleaner readability and logic.
 - Keyboard navigation.
 - Add charts and sankey visualization.
 - Add RAG chat within PDFs / parsed text / JSON data.
