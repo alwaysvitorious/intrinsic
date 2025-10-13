@@ -1,6 +1,14 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron/main';
 import { Menu } from 'electron';
 import { openDb, closeDb } from './db/init.js';
+import { loadConfig } from './utils/config.js';
+import {
+	initSettings,
+	loadSettings,
+	saveSettings,
+	getSettings,
+} from './utils/settings.js';
+import { fileWriter } from './utils/file-writer.js';
 import {
 	getTickersCount,
 	getTickers,
@@ -9,11 +17,13 @@ import {
 	deletePeriod,
 	deleteTicker,
 } from './db/queries.js';
+import { initOpenAI, runAI } from './ai/inference.js';
 import path from 'path';
-import fs from 'fs';
 import fsp from 'fs/promises';
 import { fileURLToPath } from 'url';
-import { setupOpenai, runAI } from './ai/inference.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.setName('Intrinsic');
 
@@ -27,96 +37,12 @@ if (!gotLock) {
 let mainWindow = null;
 let db = null;
 
-// ───────── Config ─────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const configPath = path.resolve(__dirname, '../../config.json');
-
 let config;
 try {
-	const rawConfig = fs.readFileSync(configPath, 'utf8');
-	config = JSON.parse(rawConfig);
-
-	const expandAndNormalize = (p) => {
-		if (typeof p === 'string' && p !== '') {
-			// Expand ~
-			if (p.startsWith('~')) {
-				p = path.join(process.env.HOME || process.env.USERPROFILE, p.slice(1));
-			}
-
-			// Ensure trailing slash
-			if (!p.endsWith(path.sep)) {
-				p += path.sep;
-			}
-		}
-		return p;
-	};
-
-	config.filewriter_abs_path = expandAndNormalize(config.filewriter_abs_path);
-	config.filewriter_raw_abs_path = expandAndNormalize(
-		config.filewriter_raw_abs_path
-	);
+	config = loadConfig();
 } catch (err) {
-	console.error(`Failed to load config from ${configPath}:`, err);
+	console.error('Failed to load config:', err);
 	process.exit(1);
-}
-
-setupOpenai(config.openai_api_key);
-
-const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-let settings = {};
-
-// Load settings (or fallback)
-function loadSettings() {
-	try {
-		const raw = fs.readFileSync(settingsPath, 'utf8');
-		settings = JSON.parse(raw);
-	} catch {
-		settings = {}; // start fresh if missing/corrupt
-	}
-	return settings;
-}
-
-async function saveSettings() {
-	await fsp.writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf8');
-}
-
-export async function fileWriter(filename, content, isRaw) {
-	if (!config.filewriter_abs_path || config.filewriter_abs_path.trim() === '') {
-		return false;
-	}
-
-	try {
-		await fsp.mkdir(config.filewriter_abs_path, { recursive: true });
-
-		let targetPath;
-
-		if (isRaw) {
-			if (
-				config.filewriter_raw_abs_path &&
-				config.filewriter_raw_abs_path.trim() != ''
-			) {
-				await fsp.mkdir(config.filewriter_raw_abs_path, { recursive: true });
-
-				targetPath = path.join(
-					config.filewriter_raw_abs_path,
-					`${filename}.txt`
-				);
-			} else {
-				targetPath = path.join(config.filewriter_abs_path, `raw_parsed.txt`);
-			}
-		} else {
-			targetPath = path.join(config.filewriter_abs_path, `${filename}.txt`);
-		}
-
-		await fsp.writeFile(targetPath, content, 'utf8');
-
-		return true;
-	} catch (err) {
-		console.error('fileWriter failed to write file:', err);
-		return false;
-	}
 }
 
 // ───────── Window ─────────
@@ -156,9 +82,11 @@ app.on('second-instance', () => {
 });
 
 // ───────── Lifecycle ─────────
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+	initSettings();
 	loadSettings();
 
+	// ---- DB init ----
 	try {
 		const dbDir = path.join(app.getPath('userData'), 'sqlite');
 		const dbName = 'intrinsic.sqlite';
@@ -170,17 +98,27 @@ app.whenReady().then(() => {
 		console.error('Could not open database:', err);
 		dialog.showErrorBox('Database Error', String(err));
 		app.quit();
-		return;
+		setTimeout(() => process.exit(1), 3000); // belt & suspenders
+		return; // stop startup
 	}
 
-	ipcMain.handle('settings:get', async () => {
-		return settings;
-	});
+	// ---- OpenAI init ----
+	try {
+		await initOpenAI(config.openai_api_key);
+	} catch (err) {
+		console.error('Could not initialize OpenAI:', err);
+		dialog.showErrorBox('OpenAI Error', String(err));
+		app.quit();
+		setTimeout(() => process.exit(1), 3000); // belt & suspenders
+		return; // stop startup
+	}
 
-	ipcMain.handle('settings:update', async (_event, updates) => {
-		settings = { ...settings, ...updates };
+	ipcMain.handle('settings:get', async () => getSettings());
+
+	ipcMain.handle('settings:update', async (_e, updates) => {
+		Object.assign(getSettings(), updates);
 		await saveSettings();
-		return settings;
+		return getSettings();
 	});
 
 	ipcMain.handle('db:getTickersCount', () => {

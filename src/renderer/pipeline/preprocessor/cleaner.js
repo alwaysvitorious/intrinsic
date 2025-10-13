@@ -188,9 +188,6 @@ export function cleanChunk(target, chunk, period) {
 	// ***
 	// ****
 	// ***** DATES
-	if (target == 'balance') {
-		console.log('1: ', processedText);
-	}
 	if (
 		period.substring(period.length - 2) === '-Y' ||
 		period.substring(period.length - 2) === 'S2' ||

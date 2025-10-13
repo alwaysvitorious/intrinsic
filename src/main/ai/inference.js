@@ -4,15 +4,49 @@ import {
 	promptEngineerCleanerOpenAI,
 	promptEngineerSubmitterOpenAI,
 } from './prompts.js';
-import { fileWriter } from '../main.js';
+import { fileWriter } from '../utils/file-writer.js';
 
 let openAIClient = null;
+let openAIReady = false;
 
-export const setupOpenai = (apiKey) => {
-	if (openAIClient) return openAIClient;
-	openAIClient = new OpenAI({ apiKey });
+export async function initOpenAI(apiKey) {
+	if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
+		throw new Error('OpenAI API key is missing or empty.');
+	}
+
+	try {
+		const client = new OpenAI({ apiKey: apiKey.trim() });
+
+		// ping to verify key
+		await client.models.list();
+
+		openAIClient = client;
+		openAIReady = true;
+		return openAIClient;
+	} catch (err) {
+		openAIClient = null;
+		openAIReady = false;
+
+		if (err?.status === 401) {
+			throw new Error('Invalid OpenAI API key (401).');
+		}
+		if (err?.code === 'ENOTFOUND' || err?.errno === 'ENOTFOUND') {
+			throw new Error('Network error while contacting OpenAI (ENOTFOUND).');
+		}
+		throw new Error(
+			`Failed to initialize OpenAI client: ${err?.message || String(err)}`
+		);
+	}
+}
+
+function getAIClient() {
+	if (!openAIReady || !openAIClient) {
+		throw new Error(
+			'OpenAI client not initialized. Call initOpenAI() at startup.'
+		);
+	}
 	return openAIClient;
-};
+}
 
 const makeBalance = () => ({
 	units: null,
@@ -58,16 +92,13 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
         }
         */
 
-	if (!openAIClient)
-		throw new Error('OpenAI openAIClient not initialized. Review OpenAI key.');
+	const client = getAIClient();
 
 	let balance = makeBalance();
 	let income = makeIncome();
 	let cashFlow = makeCashFlow();
 
 	try {
-		const tasks = {};
-
 		if (!hits || typeof hits.balance === 'undefined') {
 			throw new Error(
 				'Invalid hits object passed to runAI: ' + JSON.stringify(hits)
@@ -81,8 +112,11 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
 			);
 		}
 
+		const tasks = {};
+
 		if (hits.balance >= minHits) {
 			tasks.balance = runOpenAIPipe(
+				client,
 				cleanedChunks.balance,
 				'balance',
 				period,
@@ -92,6 +126,7 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
 
 		if (hits.income >= minHits) {
 			tasks.income = runOpenAIPipe(
+				client,
 				cleanedChunks.income,
 				'income',
 				period,
@@ -101,6 +136,7 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
 
 		if (hits.cashFlow >= minHits) {
 			tasks.cashFlow = runOpenAIPipe(
+				client,
 				cleanedChunks.cashFlow,
 				'cashFlow',
 				period,
@@ -108,12 +144,15 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
 			);
 		}
 
+		if (Object.keys(tasks).length === 0) {
+			return { tokens: { input: 0, output: 0 }, balance, income, cashFlow };
+		}
+
 		const results = await Promise.all(
 			Object.entries(tasks).map(([key, promise]) =>
 				promise.then((res) => [key, res])
 			)
 		);
-
 		const updated = Object.fromEntries(results);
 
 		({ balance, income, cashFlow } = {
@@ -121,7 +160,7 @@ export const runAI = async (cleanedChunks, hits, minHits, period) => {
 			...updated,
 		});
 
-		let tokens = {
+		const tokens = {
 			input: 0,
 			output: 0,
 		};
@@ -162,7 +201,7 @@ function buildOpenAISchema(template, units) {
 	};
 }
 
-async function runOpenAIPipe(cleanedChunk, target, period, template) {
+async function runOpenAIPipe(client, cleanedChunk, target, period, template) {
 	const roles = getSystemPromptOpenAI(target); // role.cleaner || role.submitter
 	const cleanerPrompt = promptEngineerCleanerOpenAI(
 		cleanedChunk.text,
@@ -172,7 +211,7 @@ async function runOpenAIPipe(cleanedChunk, target, period, template) {
 
 	const model = 'gpt-5-mini';
 
-	const cleanerResp = await openAIClient.responses.create({
+	const cleanerResp = await client.responses.create({
 		model: model,
 		input: [
 			{ role: 'system', content: roles.cleaner },
@@ -192,7 +231,7 @@ async function runOpenAIPipe(cleanedChunk, target, period, template) {
 
 	const schema = buildOpenAISchema(template, cleanedChunk.units);
 
-	const submitterResp = await openAIClient.responses.create({
+	const submitterResp = await client.responses.create({
 		model: model,
 		input: [
 			{ role: 'system', content: roles.submitter },
@@ -211,13 +250,20 @@ async function runOpenAIPipe(cleanedChunk, target, period, template) {
 	});
 
 	const inputTokens =
-		cleanerResp.usage.input_tokens + submitterResp.usage.input_tokens;
+		(cleanerResp?.usage?.input_tokens || 0) +
+		(submitterResp?.usage?.input_tokens || 0);
 	const outputTokens =
-		cleanerResp.usage.output_tokens + submitterResp.usage.output_tokens;
+		(cleanerResp?.usage?.output_tokens || 0) +
+		(submitterResp?.usage?.output_tokens || 0);
 
-	const parsed = submitterResp.output_text
-		? JSON.parse(submitterResp.output_text)
-		: template;
+	let parsed = template;
+	if (submitterResp?.output_text) {
+		try {
+			parsed = JSON.parse(submitterResp.output_text);
+		} catch (e) {
+			console.warn('Failed to parse JSON output_text; using template.', e);
+		}
+	}
 
 	if (typeof cleanedChunk.units === 'number' && cleanedChunk.units !== 0) {
 		parsed.units = cleanedChunk.units;

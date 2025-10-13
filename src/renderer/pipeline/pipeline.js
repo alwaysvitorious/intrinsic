@@ -102,11 +102,15 @@ export async function pipeline(params) {
 		}
 
 		if (isPDF) {
-			console.error('PDF file size:', raw?.byteLength);
-			if (!raw || raw.byteLength < 500) return false;
+			if (!raw || raw.byteLength < 500) {
+				console.error('Raw data too short or empty');
+				return false;
+			}
 		} else {
-			console.error('HTML/text file size:', text?.length);
-			if (!text || text.length < 500) return false;
+			if (!text || text.length < 500) {
+				console.error('Text data too short or empty');
+				return false;
+			}
 		}
 
 		// *
