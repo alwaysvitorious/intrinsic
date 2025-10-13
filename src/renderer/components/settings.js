@@ -8,6 +8,12 @@ export class SettingsDialog extends LitElement {
 		lang: { type: String },
 	};
 
+	constructor() {
+		super();
+		this.open = false;
+		this.lang = 'EN';
+	}
+
 	static styles = [
 		globalStyles,
 		css`
@@ -24,12 +30,6 @@ export class SettingsDialog extends LitElement {
 			}
 		`,
 	];
-
-	constructor() {
-		super();
-		this.open = false;
-		this.lang = 'EN';
-	}
 
 	toggleLang() {
 		this.lang = this.lang === 'EN' ? 'ES' : 'EN';

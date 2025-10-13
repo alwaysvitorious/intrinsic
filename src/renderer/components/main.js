@@ -18,6 +18,17 @@ export class Tickers extends LitElement {
 		lang: { type: String },
 	};
 
+	constructor() {
+		super();
+		this.tickers = [];
+		this.currentPage = 0;
+		this.totalPages = 1;
+		this.pageSize = 20;
+		this.loading = true;
+		this.openedTicker = null;
+		this.lang = 'EN';
+	}
+
 	static styles = [
 		globalStyles,
 		iconStyles,
@@ -91,17 +102,6 @@ export class Tickers extends LitElement {
 			}
 		`,
 	];
-
-	constructor() {
-		super();
-		this.tickers = [];
-		this.currentPage = 0;
-		this.totalPages = 1;
-		this.pageSize = 20;
-		this.loading = true;
-		this.openedTicker = null;
-		this.lang = 'EN';
-	}
 
 	connectedCallback() {
 		super.connectedCallback();

@@ -5,6 +5,11 @@ export class DialogComponent extends LitElement {
 		open: { type: Boolean, reflect: true },
 	};
 
+	constructor() {
+		super();
+		this.open = false;
+	}
+
 	static styles = css`
 		:host {
 			display: none;
@@ -40,11 +45,6 @@ export class DialogComponent extends LitElement {
 			-webkit-app-region: no-drag;
 		}
 	`;
-
-	constructor() {
-		super();
-		this.open = false;
-	}
 
 	_close() {
 		this.open = false;

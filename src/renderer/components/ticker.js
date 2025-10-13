@@ -38,6 +38,20 @@ export class Ticker extends LitElement {
 		invalid: { type: Boolean },
 	};
 
+	constructor() {
+		super();
+		this.ticker = null;
+		this.data = {};
+		this.periods = [];
+		this.period = null;
+		this.loading = true;
+		this.price = null;
+		this.wishedPer = null;
+		this.openEdition = false;
+		this.editData = {};
+		this.invalid = false;
+	}
+
 	static styles = [
 		globalStyles,
 		iconStyles,
@@ -225,20 +239,6 @@ export class Ticker extends LitElement {
 			}
 		`,
 	];
-
-	constructor() {
-		super();
-		this.ticker = null;
-		this.data = {};
-		this.periods = [];
-		this.period = null;
-		this.loading = true;
-		this.price = null;
-		this.wishedPer = null;
-		this.openEdition = false;
-		this.editData = {};
-		this.invalid = false;
-	}
 
 	connectedCallback() {
 		super.connectedCallback();
