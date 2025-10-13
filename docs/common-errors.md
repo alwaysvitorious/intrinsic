@@ -69,7 +69,7 @@ formats used, the AI can be led to errors. Some of the most common errors are:
   of the data from 2023. Try to always use the same reports for that company,
   ideally their annual reports.
 
-💡 **Recommendation:**
+💡 **Recommendations:**
 
 - Try to always send the same type of report for each company and preferably
   consolidated reports. The more standardized and professional the report, the
