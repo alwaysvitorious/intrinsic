@@ -36,7 +36,10 @@ export class Ticker extends LitElement {
 		openEdition: { type: Boolean },
 		editData: { type: Object },
 		invalid: { type: Boolean },
+		ttmAggregate: { type: Object },
 	};
+
+	ttmFields = ['cash_flow_from_operations', 'eps', 'net_income'];
 
 	constructor() {
 		super();
@@ -50,6 +53,9 @@ export class Ticker extends LitElement {
 		this.openEdition = false;
 		this.editData = {};
 		this.invalid = false;
+		this.ttmAggregate = Object.fromEntries(
+			this.ttmFields.map((field) => [field, 0])
+		);
 	}
 
 	static styles = [
@@ -284,6 +290,92 @@ export class Ticker extends LitElement {
 		return getFinancesLabels(this.lang || 'EN');
 	}
 
+	updated(changedProps) {
+		if (this.loading) return;
+		if (changedProps.has('data') || changedProps.has('period')) {
+			this.ttmAggregateSum();
+		}
+	}
+
+	periodsForTTM() {
+		const year = parseInt(this.period.slice(0, 4), 10);
+		const kind = this.period.slice(5, 6);
+		const num = parseInt(this.period.slice(6), 10);
+
+		let prior = [];
+
+		if (kind === 'Q') {
+			// need the 3 prior quarters
+			switch (num) {
+				case 1:
+					prior = [`${year - 1}-Q4`, `${year - 1}-Q3`, `${year - 1}-Q2`];
+					break;
+				case 2:
+					prior = [`${year}-Q1`, `${year - 1}-Q4`, `${year - 1}-Q3`];
+					break;
+				case 3:
+					prior = [`${year}-Q2`, `${year}-Q1`, `${year - 1}-Q4`];
+					break;
+				case 4:
+					prior = [`${year}-Q3`, `${year}-Q2`, `${year}-Q1`];
+					break;
+				default:
+					prior = [];
+			}
+		} else if (kind === 'S') {
+			// need the 1 prior semester
+			if (num === 1) prior = [`${year - 1}-S2`];
+			else if (num === 2) prior = [`${year}-S1`];
+		}
+
+		// add current period at the beginning
+		if (prior.length > 0) {
+			prior.unshift(this.period);
+		}
+
+		return prior;
+	}
+
+	ttmAggregateSum() {
+		const periods = this.periodsForTTM();
+		const zeroAgg = Object.fromEntries(this.ttmFields.map((f) => [f, 0]));
+
+		// if not a TTM case
+		if (periods.length === 0) {
+			this.ttmAggregate = zeroAgg;
+			return;
+		}
+
+		// validate all periods and all fields
+		const allDataPresent = periods.every((p) => {
+			const row = this.data[p];
+			return (
+				row &&
+				this.ttmFields.every((f) => {
+					const val = Number(row[f]);
+					return Number.isFinite(val) && val !== 0; // treat 0 as falsy
+				})
+			);
+		});
+
+		if (!allDataPresent) {
+			this.ttmAggregate = zeroAgg;
+			return;
+		}
+
+		// compute the aggregate
+		const aggregate = { ...zeroAgg };
+		for (const p of periods) {
+			const row = this.data[p];
+			for (const f of this.ttmFields) {
+				aggregate[f] += Number(row[f]);
+			}
+		}
+
+		// update reactive property (Lit will re-render)
+		this.ttmAggregate = aggregate;
+	}
+
 	async handleDelete() {
 		try {
 			if (this.periods.length === 1) {
@@ -439,7 +531,8 @@ export class Ticker extends LitElement {
 	get derivedRatios() {
 		let derivedRatios = calculateRatiosWithPrice(
 			this.price,
-			this.data[this.period]
+			{ ...this.data[this.period] }, // create a shallow copy to avoid mutations
+			this.ttmAggregate
 		);
 		let prevDerivedRatios;
 
@@ -451,7 +544,8 @@ export class Ticker extends LitElement {
 
 		prevDerivedRatios = calculateRatiosWithPrice(
 			this.price,
-			this.data[prevPeriod]
+			{ ...this.data[prevPeriod] }, // shallow copy
+			this.ttmAggregate
 		);
 
 		return addRatiosChange(derivedRatios, prevDerivedRatios);
@@ -655,7 +749,8 @@ export class Ticker extends LitElement {
 							<p>
 								${priceForWhishedPer(
 									this.wishedPer,
-									this.data[this.period].eps
+									this.data[this.period].eps,
+									this.ttmAggregate.eps
 								)}
 							</p>
 							<p>
@@ -664,6 +759,7 @@ export class Ticker extends LitElement {
 									this.wishedPer,
 									this.data[this.period].shares,
 									this.data[this.period].net_income,
+									this.ttmAggregate.net_income,
 									this.lang
 								)}
 							</p>

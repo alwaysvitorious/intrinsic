@@ -12,12 +12,13 @@ formats used, the AI can be led to errors. Some of the most common errors are:
   indicates a more attractive valuation given a constant price across periods.
 
 - ❌ **Calculate price-dependent metrics with non-annual data**. If you
-  speculate with quarterly or semi-annual data, the values won’t reflect the
-  company’s annual position. For example, net profit will be for that quarter or
-  semester, not the full year, so the score will be worse and the required price
-  and profit higher. A rough approximation is to multiply/divide by 4 for
-  quarterly and by 2 for semi-annual, but this won’t reflect seasonality and
-  other factors. Prefer annual data.
+  speculate with quarterly or semi-annual data and did not submit previous
+  fields to calculate the TTM data, It defaults to current data, so the values
+  won’t reflect the company’s annual position. For example, net profit will be
+  for that quarter or semester, not the full year, so the score will be worse
+  and the required price and profit higher. A rough approximation is to
+  multiply/divide by 4 for quarterly and by 2 for semi-annual, but this won’t
+  reflect seasonality and other factors. Prefer annual data or fill TTM reports.
 
 - ❌ **Edge cases**. Pay special attention if the company reports its results
   for the last period (quarterly or annual) in January of the following year.
@@ -49,10 +50,6 @@ formats used, the AI can be led to errors. Some of the most common errors are:
   image. For example sending a PDF consisting of images. In these cases the
   information cannot be extracted, since Intrinsic relies on LLMs that will not
   process images.
-
-- ❌ **Calculating and interpreting the score and speculated values with
-  quarterly or semi-annual data**. Since they do not reflect the company's
-  annual results.
 
 - ❌ **Sending financial reports that contain multiple periods**. For example a
   report that shows an income statement with quarterly, semi-annual, and annual

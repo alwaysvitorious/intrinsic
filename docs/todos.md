@@ -1,12 +1,13 @@
 ## To-dos
 
-- Support insurance companies and banks.
+- Make UI responsive.
 - Add tests.
 - Allow different score formulas.
+- Support insurance companies and banks.
 - Improve cleaner readability and logic.
 - Keyboard navigation.
 - Add charts and sankey visualization.
-- Add RAG chat within PDFs / parsed text / JSON data.
+- Add RAG chat within rendered doc / parsed text / JSON data.
 - Allow CSR URLs.
 - Select tickers on portfolio -> filter/search through dialog.
 - Web-search for latest portfolio tickers news.

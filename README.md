@@ -187,6 +187,10 @@ Weights:
 | All ratios available | 0.4         | 0.3      | 0.3       |
 | EV/OCF not available | –           | 0.5      | 0.5       |
 
+If the period is 'Q' or 'S', for the upper 2 boxes, Intrinsic tries to perform
+the calculations based on TTM (trailing twelve months) data. If there is no data
+available (not submitted) just uses current data for that quarter or semester.
+
 ### Common Errors
 
 Please take a moment to review [docs/common-errors.md](docs/common-errors.md)

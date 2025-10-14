@@ -48,6 +48,7 @@ export const editableFields = [
 	'cash_flow_from_investing',
 	'cash_flow_from_financing',
 ];
+
 // -----------------------
 
 export function getDerivedFields(data) {
@@ -196,7 +197,7 @@ export function addRatiosChange(current, previous) {
 	return result;
 }
 
-export function calculateRatiosWithPrice(price, data) {
+export function calculateRatiosWithPrice(price, data, ttm) {
 	if (!price || !data) {
 		let ratios = {
 			ev: null,
@@ -211,6 +212,23 @@ export function calculateRatiosWithPrice(price, data) {
 	}
 
 	price = parseFloat(price);
+
+	if (ttm && typeof ttm === 'object') {
+		const allTTMValid = Object.values(ttm).every((v) => v); // all values are truthy
+
+		if (allTTMValid) {
+			console.log('Using TTM values for calculations:', ttm);
+
+			for (const [field, value] of Object.entries(ttm)) {
+				if (!data[field]) {
+					data[field] = value;
+				}
+			}
+		} else {
+			console.log('Invalid TTM, using regular data.');
+		}
+	}
+
 	let sharesOutstanding = data.shares ? Math.floor(Number(data.shares)) : null;
 	let totalDebt = data.total_liabilities
 		? Math.floor(Number(data.total_liabilities))
@@ -280,27 +298,36 @@ export function calculateRatiosWithPrice(price, data) {
 	};
 
 	for (const key in ratios) {
-		if (isNaN(ratios[key]) || ratios[key] === null) {
-			ratios[key] = null;
-		} else {
-			if (key === 'ev') {
-				ratios[key] = Math.floor(ratios[key]);
-			} else {
-				ratios[key] = Math.round(ratios[key] * 100) / 100;
-			}
-		}
+		const val = ratios[key];
+		ratios[key] =
+			!val || isNaN(val)
+				? null
+				: key === 'ev'
+				? Math.floor(val)
+				: Math.round(val * 100) / 100;
 	}
 
 	return ratios;
 }
 
-export function priceForWhishedPer(wishedPER, eps) {
+export function priceForWhishedPer(wishedPER, eps, ttmEps) {
 	if (!wishedPER || !eps) return html`<p class="na">NA</p>`;
-	return html`${Math.round(Number(wishedPER) * Number(eps))}
+
+	epsToUse = eps;
+	if (ttmEps && ttmEps > 0) epsToUse = ttmEps;
+
+	return html`${Math.round(Number(wishedPER) * Number(epsToUse))}
 		<sub class="label gray-text">p needed</sub>`;
 }
 
-export function incomeForWishedPER(price, wishedPER, shares, netIncome, lang) {
+export function incomeForWishedPER(
+	price,
+	wishedPER,
+	shares,
+	netIncome,
+	netIncomeTtm,
+	lang
+) {
 	if (!price || !wishedPER || !shares || !netIncome)
 		return html`<p class="na">NA</p>`;
 
@@ -309,7 +336,11 @@ export function incomeForWishedPER(price, wishedPER, shares, netIncome, lang) {
 	const priceNumber = Number(price);
 	const wishedPERNumber = Number(wishedPER);
 	const sharesNumber = Number(shares);
-	const netIncomeNumber = Number(netIncome);
+
+	let netIncomeToUse = netIncome;
+	if (netIncomeTtm && netIncomeTtm > 0) netIncomeToUse = netIncomeTtm;
+
+	const netIncomeNumber = Number(netIncomeToUse);
 
 	if (
 		isNaN(priceNumber) ||
@@ -318,7 +349,7 @@ export function incomeForWishedPER(price, wishedPER, shares, netIncome, lang) {
 		wishedPERNumber <= 0 ||
 		sharesNumber <= 0
 	) {
-		return { value: 'π', percentChange: null };
+		return html`<p class="na">NA</p>`;
 	}
 
 	const requiredEPS = priceNumber / wishedPERNumber;
@@ -346,7 +377,7 @@ export function incomeForWishedPER(price, wishedPER, shares, netIncome, lang) {
 	}
 
 	let changeHTML = '';
-	if (percentChange) {
+	if (percentChange != null) {
 		if (percentChange > 0) {
 			changeHTML = html`<sub class="green-text">${percentChange}%</sub>`;
 		} else if (percentChange < 0) {
