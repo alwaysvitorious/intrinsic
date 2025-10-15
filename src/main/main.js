@@ -221,6 +221,11 @@ app.whenReady().then(async () => {
 
 	createWindow();
 
+	if (process.platform !== 'darwin') {
+		mainWindow.setAutoHideMenuBar(true);
+		mainWindow.setMenuBarVisibility(false);
+	}
+
 	app.on('activate', () => {
 		if (BrowserWindow.getAllWindows().length === 0) createWindow();
 	});
@@ -248,7 +253,6 @@ if (process.env.NODE_ENV !== 'development') {
 				{ role: 'cut' },
 				{ role: 'copy' },
 				{ role: 'paste' },
-				{ role: 'delete' },
 				{ type: 'separator' },
 				{ role: 'selectAll' },
 			],
