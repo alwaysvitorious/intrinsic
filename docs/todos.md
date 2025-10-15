@@ -2,6 +2,8 @@
 
 - Make UI responsive.
 - Add tests.
+- Use electron-builder, display Intrinsic within system's apps.
+- Distribute through package managers also.
 - Allow different score formulas.
 - Support insurance companies and banks.
 - Improve cleaner readability and logic.
