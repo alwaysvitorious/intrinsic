@@ -1,11 +1,16 @@
 import { cleanChunk } from '../pipeline/preprocessor/cleaner.js';
 import { Chunker } from '../pipeline/preprocessor/chunker.js';
+import { DOMParser, parseHTML } from 'linkedom';
+globalThis.DOMParser = DOMParser;
+globalThis.Node = parseHTML('<!doctype html><html></html>').window.Node;
+import { processHTMLTextCore } from '../pipeline/preprocessor/parse-html.core.js';
 
 const chunker = new Chunker();
 
 const registry = {
 	cleanChunk,
 	findChunk: (...args) => chunker.findChunk(...args),
+	processHTMLTextCore: (...args) => processHTMLTextCore(...args),
 };
 
 self.onmessage = async (event) => {
@@ -17,7 +22,7 @@ self.onmessage = async (event) => {
 	}
 
 	try {
-		const result = await handler(...args); // will await even if handler is sync
+		const result = await handler(...args); // awaits even if sync
 		self.postMessage({ result });
 	} catch (err) {
 		self.postMessage({ error: err.message });

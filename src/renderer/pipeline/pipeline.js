@@ -122,7 +122,7 @@ export async function pipeline(params) {
 		if (isPDF) {
 			parsed = await extractPDFText(raw, params.start, params.end);
 		} else {
-			parsed = processHTMLText(text, params.start, params.end);
+			parsed = await processHTMLText(text, params.start, params.end);
 		}
 
 		if (!parsed || parsed.length < 500) {
