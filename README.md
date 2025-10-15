@@ -64,9 +64,9 @@ When you click “+”, some input fields appear:
 - **Source**. Directly type an URL on the field or click the file icon to submit
   a file. Intrinsic currently supports .pdf, .html, .xhtml, .mhtml, .mht
   formats. Client-side rendered (CSR) websites are not supported; to attach one:
-  right click → save as → single file, then submit the generated .mht. Banks and
-  insurance companies are not well supported, as they do not follow traditional
-  standard report formats.
+  right click → Save As → 'Single File' or 'Page Source', then submit the file.
+  Banks and insurance companies are not supported, as they do not follow
+  traditional standard report formats.
 
 **Optional fields**:
 
