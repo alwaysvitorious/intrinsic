@@ -2,6 +2,13 @@ import fsp from 'fs/promises';
 import path from 'path';
 import { getConfig } from './config.js';
 
+/**
+    Writes content to a specified file within configured directories.
+    Creates directories if they do not exist.
+
+    Saves different pipeline steps in orderly manner for later review or debugging.
+    Helps us see what worked and what didn't (specially the cleaner) and refine accordingly.
+ */
 export async function fileWriter(filename, content, isRaw = false) {
 	const config = getConfig();
 
