@@ -217,15 +217,11 @@ export function calculateRatiosWithPrice(price, data, ttm) {
 		const allTTMValid = Object.values(ttm).every((v) => v); // all values are truthy
 
 		if (allTTMValid) {
-			console.log('Using TTM values for calculations:', ttm);
-
 			for (const [field, value] of Object.entries(ttm)) {
 				if (!data[field]) {
 					data[field] = value;
 				}
 			}
-		} else {
-			console.log('Invalid TTM, using regular data.');
 		}
 	}
 
